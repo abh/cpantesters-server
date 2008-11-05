@@ -1,7 +1,7 @@
-package CPANTesters::Control::API;
+package CPAN::Testers::Server::Control::API;
 use strict;
 use base qw(Combust::Control::API);
 
- # CPANTesters::Control
+ # CPAN::Testers::Server::Control
 
 1;

@@ -1,4 +1,4 @@
-package CPANTesters::Control::Account;
+package CPAN::Testers::Server::Control::Account;
 use strict;
 
 

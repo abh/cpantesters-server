@@ -1,7 +1,7 @@
-package CPANTesters::API;
+package CPAN::Testers::Server::API;
 use strict;
 use base qw(Combust::API);
-use CPANTesters::Model;
+use CPAN::Testers::Server::Model;
 
 __PACKAGE__->setup_api
   ('report'  => 'Report',
@@ -10,7 +10,7 @@ __PACKAGE__->setup_api
 sub call {
     my $self = shift;
 
-    my $db = CPANTesters::Model->db;
+    my $db = CPAN::Testers::Server::Model->db;
     $db->begin_work;
 
     $_[2]->{db} = $db;

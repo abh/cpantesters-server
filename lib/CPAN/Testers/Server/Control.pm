@@ -1,8 +1,8 @@
-package CPANTesters::Control;
+package CPAN::Testers::Server::Control;
 use strict;
 use Apache::Constants qw(OK NOT_FOUND);
 use base qw(Combust::Control::Basic Combust::Control::Bitcard::RDBO);
-use CPANTesters::API;
+use CPAN::Testers::Server::API;
 
 
 sub init {
@@ -16,7 +16,7 @@ sub init {
 }
 
 sub bc_user_class {
-    CPANTesters::Model->user;
+    CPAN::Testers::Server::Model->user;
   }
 
 sub bc_info_required {

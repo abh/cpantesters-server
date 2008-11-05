@@ -10,12 +10,12 @@ PerlRequire [% root_local %]/apache/sites/[% site %].pl
 
     <Location />
        SetHandler perl-script
-       PerlHandler CPANTesters::Control::Basic->super
+       PerlHandler CPAN::Testers::Server::Control::Basic->super
     </Location>
 
     <Location /api>
        SetHandler perl-script
-       PerlHandler CPANTesters::Control::API->super
+       PerlHandler CPAN::Testers::Server::Control::API->super
     </Location>
 
     <Location /error/>

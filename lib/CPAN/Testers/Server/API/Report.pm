@@ -1,15 +1,15 @@
-package CPANTesters::API::Report;
+package CPAN::Testers::Server::API::Report;
 use strict;
-use base qw(CPANTesters::API);
+use base qw(CPAN::Testers::Server::API);
 use JSON::XS;
-use CPANTesters::Report;
+use CPAN::Testers::Server::Report;
 
 sub post {
     my $self = shift;
 
     my ($api_key, $via) = $self->_required_param(qw(api_key via));
 
-    my $user = CPANTesters::Model->user->fetch(api_key => $api_key);
+    my $user = CPAN::Testers::Server::Model->user->fetch(api_key => $api_key);
     die "Invalid API key\n" unless $user;
 
     my $data = "";

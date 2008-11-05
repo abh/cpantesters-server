@@ -1,5 +1,5 @@
-package CPANTesters::Report;
-# TODO: rename to CPANTesters::ReportStore ?
+package CPAN::Testers::Server::Report;
+# TODO: rename to CPAN::Testers::Server::ReportStore ?
 
 use strict;
 use warnings;

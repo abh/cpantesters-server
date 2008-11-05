@@ -1,4 +1,4 @@
-package CPANTesters::DB::ConventionManager;
+package CPAN::Testers::Server::DB::ConventionManager;
 use strict;
 
 use base qw(Rose::DB::Object::ConventionManager);

@@ -1,6 +1,6 @@
-package CPANTesters::Control::Basic;
+package CPAN::Testers::Server::Control::Basic;
 use strict;
-use base qw(CPANTesters::Control);
+use base qw(CPAN::Testers::Server::Control);
 use Apache::Constants qw(OK NOT_FOUND);
 
 sub render {

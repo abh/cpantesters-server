@@ -1,6 +1,6 @@
-package CPANTesters::API::Search;
+package CPAN::Testers::Server::API::Search;
 use strict;
-use base qw(CPANTesters::API);
+use base qw(CPAN::Testers::Server::API);
 use JSON::XS;
 use Net::CouchDB;
 

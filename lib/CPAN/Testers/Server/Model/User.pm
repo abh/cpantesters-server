@@ -1,4 +1,4 @@
-package CPANTesters::Model::User;
+package CPAN::Testers::Server::Model::User;
 use strict;
 use Combust::Secret qw(get_secret);
 use Digest::MD5 qw(md5_hex);
