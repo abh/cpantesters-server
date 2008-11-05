@@ -1,0 +1,19 @@
+*~
+._*
+.DS_Store
+.*.swp
+*.bak
+
+# /
+/tmp
+/combust.conf
+/combust.conf.*
+/REVISION
+/run
+/cbsetup
+/restart
+
+
+db/nntp_mirror.db
+db/testers.db
+

@@ -1,0 +1,49 @@
+eval 'exec $CBROOT/bin/perl $0 ${1+"$@"}'
+  if $running_under_some_shell;
+use strict;
+use warnings;
+
+use Net::NNTP;
+use DBI;
+use IO::Uncompress::AnyInflate qw(anyinflate $AnyInflateError) ;
+use CPAN::Testers::Server::NNTP;
+
+my $dbh = CPAN::Testers::Server::NNTP->cache_dbh or die "no db";
+
+my ($max_id) = $dbh->selectrow_array(q[select max(id) from articles]) || 0;
+
+my $last_id = shift || 0;
+
+my $limit = 10_000;
+
+while (1) {
+
+    print scalar localtime, " checking > $last_id\n";
+
+    my $articles = $dbh->selectall_arrayref('select * from articles where id > ? order by id limit ?',
+                                              { Slice => {} },
+                                            $last_id, $limit
+                                           );
+    
+    last unless $articles and @$articles;
+    
+    for (@$articles) {
+        my $zarticle = $_->{article};
+        my $article;
+
+        anyinflate \$zarticle => \$article;
+
+        next if $article and length($article) > 20;
+
+        while(1) {
+            print "getting article from nntp\n";
+            $article = CPAN::Testers::NNTP::Server::get($_->{id});
+            last if $article;
+            print "didn't get article; trying again in 5 seconds\n";
+            sleep 5;  
+        }
+        CPAN::Testers::Server::NNTP::save($_->{id}, $article) if $article;
+    }
+    
+    $last_id = $articles->[-1]->{id};
+}

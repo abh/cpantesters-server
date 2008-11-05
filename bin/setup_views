@@ -1,0 +1,83 @@
+eval 'exec $CBROOT/bin/perl $0 ${1+"$@"}'
+  if $running_under_some_shell;
+use strict;
+use warnings;
+use Data::Dump qw(dump);
+use Net::CouchDB;
+
+my $design_to_change = shift;
+
+my $couch_url = $ENV{COUCHDB_URL} || 'http://localhost:5984/';
+my $db_name   = $ENV{COUCHDB} || 'cpantesters';
+my $db = Net::CouchDB->new($couch_url)->db($db_name);
+
+my %design =
+  (
+   dist => { "all" =>
+             { map => "function(doc) {
+                         if (doc.type == 'report') { 
+                            // emit(null, { distribution: doc.distribution.name } )
+                            emit(doc._id, { distribution: doc.distribution.name,
+                                            version: doc.distribution.version,
+                                            grade: doc.grade } )
+                         } 
+                      }"
+             },
+             "name" =>    
+             { map => "function(doc) { 
+                         if (doc.type == 'report') { 
+                             emit(doc.distribution.name,
+                                  { version: doc.distribution.version,
+                                    grade: doc.grade
+                                  }
+                                 )
+                          }
+                       }"
+             },
+#             "not_dist" => 
+#             { map => "function(doc) {
+#                         if (!doc.distribution) { 
+#                            emit(doc._id, { revver: doc._rev } )
+#                         } 
+#                      }"
+#             },
+           },
+   nntp => { message_number =>
+             { map => "function(doc) { 
+                         if (doc.type == 'report' && (doc.nntp || doc.nntp_id)) { 
+                            var num = doc.nntp ? doc.nntp.num : doc.nntp_id
+                            emit(num, { })
+                         }
+                       }"
+             },
+             message_id =>
+             { map => "function(doc) { 
+                         if (doc.type == 'report' && doc.nntp) { 
+                             emit(doc.nntp.msg_id, { })
+                          }
+                       }"
+             },
+           },
+   report => { version =>
+               { map => "function(doc) { emit(doc.report_version, {}) }" 
+               }
+             },
+); 
+
+#dump(%design);
+#exit;
+
+for my $design_name (keys %design) {
+    next if $design_to_change and $design_name ne $design_to_change;
+    my $design = $db->document("_design/${design_name}");
+    $design && $design->delete;
+    $design = $db->insert({ _id => "_design/${design_name}" });
+
+    for my $view_name (keys %{ $design{$design_name} }) {
+        $design->add_view
+          ($view_name, $design{$design_name}->{$view_name});
+    }
+
+    $design->update;
+}
+

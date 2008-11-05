@@ -1,0 +1,27 @@
+
+PerlRequire [% root_local %]/apache/sites/[% site %].pl
+
+  <VirtualHost *:[% config.port %]>
+    ServerName [% config.site.$site.servername %]
+    [% expandServerAliases( config.site.$site.aliases ) %]
+    PerlTransHandler Combust::Redirect->super
+
+    PerlSetVar site [% site %]
+
+    <Location />
+       SetHandler perl-script
+       PerlHandler CPANTesters::Control::Basic->super
+    </Location>
+
+    <Location /api>
+       SetHandler perl-script
+       PerlHandler CPANTesters::Control::API->super
+    </Location>
+
+    <Location /error/>
+       SetHandler  perl-script
+       PerlHandler Combust::Control::Error->super
+    </Location>
+
+  </VirtualHost>
+

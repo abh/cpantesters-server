@@ -1,0 +1,180 @@
+eval 'exec $CBROOT/bin/perl $0 ${1+"$@"}'
+  if $running_under_some_shell;
+use strict;
+use warnings;
+
+use lib '/Users/ask/src/Net-CouchDB/lib';
+
+use Net::CouchDB;
+use DBI;
+use IO::Uncompress::AnyInflate qw(anyinflate $AnyInflateError) ;
+use Data::Dump qw(dump);
+use LWP::Simple qw(get); 
+use Email::Simple;
+
+use CPAN::Testers::Server::NNTP;
+
+my $limit = shift || 3000;
+
+my $couch_url = $ENV{COUCHDB_URL} || 'http://localhost:5984/';
+my $db_name   = $ENV{COUCHDB} || 'cpantesters';
+my $db = Net::CouchDB->new($couch_url)->db($db_name);
+
+# TODO replace this with just parsing the reports
+my $dbh = DBI->connect("dbi:SQLite:$ENV{CBROOTLOCAL}/db/testers.db") or die "no testers db";
+my $dbh_articles = CPAN::Testers::Server::NNTP->cache_dbh or die "no nntp db";
+
+VIEW:
+my $doc = eval { $db->document('_design/nntp')->view('message_number')->search({ descending => 'true', count => 1 })->first };
+if ($@) {
+   warn "Error getting view, retrying in 5 seconds: $@";
+   sleep 5;
+   goto VIEW; 
+}
+
+
+#dump($doc);
+
+my $last_id = $doc && $doc->key || 0;
+print "last id: $last_id\n";
+
+my $article_sth = $dbh_articles->prepare('select article from articles where id = ?');
+
+my $compact_counter = 0;
+my $index_counter   = 0;
+
+my $got_stuff = 1;
+my $caught_up = 0;
+
+while (1) {
+    my $reports = $dbh->selectall_arrayref('select * from reports where id > ? order by id limit ?',
+                                           { Slice => {} },
+                                           $last_id, $limit
+                                          );
+
+    my ($max_article) = $dbh_articles->selectrow_array(q[select max(id) from articles]) || 0;
+    my $last_article = $reports->[-1]->{id};
+    if ($max_article < $last_article) {
+        print scalar localtime, " don't have enough articles yet (have $max_article, looking for $last_article\n"
+          if $got_stuff;
+        $got_stuff = 0;
+        $caught_up = 1;
+        sleep 10;
+        next;
+    }
+    
+    $got_stuff = 1;
+    print "========================================================\n";
+    print scalar localtime, " Fetched > $last_id\n";
+
+    unless ($reports and @$reports) {
+        warn "no more reports";
+        last;
+    }
+
+    $compact_counter += $limit;
+    $index_counter   += $limit;
+
+    print "processing ", scalar @$reports, " reports\n";
+    my @docs;
+
+    for (@$reports) {
+        my $id = $_->{id};
+        $article_sth->execute($_->{id});
+        my ($zarticle) = $article_sth->fetchrow_array;
+
+        my $article;
+        
+        if ($zarticle) {
+            anyinflate \$zarticle => \$article
+              or die "anyinflate failed: $AnyInflateError\n";
+        }
+        else {
+            while(1) {
+                print "getting article from nntp\n";
+                $article = CPAN::Testers::Server::NNTP::get($_->{id});
+                last if $article;
+                print "didn't get article; trying again in 5 seconds\n";
+                sleep 5;  
+            }
+        }
+
+        # print "got $id - ";
+
+        my $email = Email::Simple->new($article);
+
+        my $msg_id = $email->header('Message-Id')
+          or die "[$article]\n no message id in id ", $_->{id};
+
+        my $os = $_->{osname};
+        $os =~ s/-.*//;
+
+        # print " - prepared data - ";
+
+        my $h = { _id     => 'nntp-' . $_->{id}, 
+           nntp    => { num    => $_->{id} + 0,
+                        msg_id => $msg_id,
+                        report => $article,
+                      },
+           type    => 'report',
+           report_version => 0.13,
+           grade   => $_->{status},
+           distribution => {  name    => $_->{distribution},
+                              version => $_->{version},
+                           },
+           operating_system => {
+                                name    => $os,
+                                version => $_->{osvers},
+                               },
+           interpreter  => {
+                           name => 'perl',
+                           version => $_->{perl},
+                            archname => $_->{archname},
+                           },
+        };
+
+        # print " - got h ready\n";
+        
+        push @docs, $h;
+    }
+
+    die "only have ", scalar @docs, " docs from ", scalar @$reports, " reports"
+      unless @docs == @$reports;
+
+    print "inserting ", scalar @docs, " docs\n";
+
+  INSERT:
+    eval {
+        $db->insert(@docs);
+    };
+    if ($@) {
+        print "Insert failure (retrying in 5 seconds): $@\n";
+        sleep 5;
+        goto INSERT;
+    }
+
+    $last_id = $reports->[-1]->{id};
+    print "last id: $last_id\n";
+
+    #warn "new last id: $last_id";
+
+    if ($compact_counter > 500_000) {
+        print scalar localtime, " starting compaction ...\n";
+        $db->compact({ async => 0 });
+        print scalar localtime, " compaction done\n";
+        $compact_counter = 0;
+    }
+    if ($index_counter >= 10_000 or ($caught_up and $index_counter > 1_500)) {
+        print scalar localtime, " updating indexes...\n";
+        eval { $db->document('_design/nntp')->view('message_number')->search({ count => 1 })->response };
+        eval { $db->document('_design/dist')->view('name')->search({ count => 1 })->response };
+        eval { $db->document('_design/report')->view('version')->search({ count => 1 })->response };
+        print scalar localtime, " indexes updated\n";
+        $index_counter = 0;
+        $caught_up = 0;
+    }
+
+}
+
+
+
