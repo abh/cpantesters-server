@@ -7,9 +7,8 @@ use Net::CouchDB;
 
 my $design_to_change = shift;
 
-my $couch_url = $ENV{COUCHDB_URL} || 'http://localhost:5984/';
-my $db_name   = $ENV{COUCHDB} || 'cpantesters';
-my $db = Net::CouchDB->new($couch_url)->db($db_name);
+use CPAN::Testers::Server::DB qw(db);
+my $db = db();
 
 my %design =
   (
@@ -46,20 +45,20 @@ my %design =
              { map => "function(doc) { 
                          if (doc.type == 'report' && (doc.nntp || doc.nntp_id)) { 
                             var num = doc.nntp ? doc.nntp.num : doc.nntp_id
-                            emit(num, { })
+                            emit(num, null)
                          }
                        }"
              },
              message_id =>
              { map => "function(doc) { 
                          if (doc.type == 'report' && doc.nntp) { 
-                             emit(doc.nntp.msg_id, { })
+                             emit(doc.nntp.msg_id, null)
                           }
                        }"
              },
            },
    report => { version =>
-               { map => "function(doc) { emit(doc.report_version, {}) }" 
+               { map => "function(doc) { emit(doc.report_version, null) }" 
                }
              },
 ); 

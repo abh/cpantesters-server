@@ -4,21 +4,13 @@ package CPAN::Testers::Server::Report;
 use strict;
 use warnings;
 
-use lib '/Users/ask/src/Net-CouchDb/lib/';
+use Net::CouchDB;
 
-use Net::CouchDb;
-use LWP::ConnCache;
 use Data::Dump qw(dump);
 
-# http://localhost:5984/cpantesters/_view/dist/name?key=%22Acme-Foo%22 
 
-my $conn_cache = LWP::ConnCache->new;
-
-my $couch = Net::CouchDb->new(host       => 'localhost',
-                            conn_cache => $conn_cache,
-                           );
-
-my $cdb = $couch->db("cpantesters");
+my $couch = undef; # Net::CouchDB->new(host => 'localhost' );
+my $cdb = 0 && $couch->db("cpantesters");
 
 sub new {
     my ($class, %args) = @_;

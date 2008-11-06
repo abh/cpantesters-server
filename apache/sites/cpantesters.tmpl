@@ -4,13 +4,17 @@ PerlRequire [% root_local %]/apache/sites/[% site %].pl
   <VirtualHost *:[% config.port %]>
     ServerName [% config.site.$site.servername %]
     [% expandServerAliases( config.site.$site.aliases ) %]
-    PerlTransHandler Combust::Redirect->super
 
     PerlSetVar site [% site %]
 
     <Location />
        SetHandler perl-script
        PerlHandler CPAN::Testers::Server::Control::Basic->super
+    </Location>
+
+    <Location /report>
+       SetHandler perl-script
+       PerlHandler CPAN::Testers::Server::Control::Report->super
     </Location>
 
     <Location /api>

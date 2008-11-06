@@ -1,13 +1,19 @@
 package CPAN::Testers::Server::API;
 use strict;
 use base qw(Combust::API);
-use CPAN::Testers::Server::Model;
 
 __PACKAGE__->setup_api
   ('report'  => 'Report',
   );
 
-sub call {
+
+1;
+
+__END__
+
+use CPAN::Testers::Server::Model;
+
+sub __call {
     my $self = shift;
 
     my $db = CPAN::Testers::Server::Model->db;

@@ -3,8 +3,6 @@ eval 'exec $CBROOT/bin/perl $0 ${1+"$@"}'
 use strict;
 use warnings;
 
-use lib '/Users/ask/src/Net-CouchDB/lib';
-
 use Net::CouchDB;
 use DBI;
 use IO::Uncompress::AnyInflate qw(anyinflate $AnyInflateError) ;
@@ -16,9 +14,8 @@ use CPAN::Testers::Server::NNTP;
 
 my $limit = shift || 3000;
 
-my $couch_url = $ENV{COUCHDB_URL} || 'http://localhost:5984/';
-my $db_name   = $ENV{COUCHDB} || 'cpantesters';
-my $db = Net::CouchDB->new($couch_url)->db($db_name);
+use CPAN::Testers::Server::DB qw(db);
+my $db = db();
 
 # TODO replace this with just parsing the reports
 my $dbh = DBI->connect("dbi:SQLite:$ENV{CBROOTLOCAL}/db/testers.db") or die "no testers db";
