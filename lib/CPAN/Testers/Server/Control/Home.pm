@@ -9,9 +9,23 @@ sub homepage {
 
     my $db = db();
 
-    my @recent = $db->all_documents({count => 20});
+  VIEW:
+    my $documents = eval { $db->document('_design/report')->view('timestamp')->search({ descending => JSON::true, count => 30 }) };
+    if ($@) {
+        warn "Error getting view, retrying in 5 seconds: $@";
+        sleep 5;
+        goto VIEW; 
+    }
 
-    return $c->render(recent => \@recent);
+    my @rows;
+    while (my $row = $documents->next) {
+        push @rows, $row;
+    }
+
+    #use Data::Dump qw(dump);
+    #dump(\@rows);
+
+    return $c->render(recent => \@rows);
 }
 
 
