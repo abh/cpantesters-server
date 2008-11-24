@@ -1,6 +1,5 @@
-#!/usr/bin/perl
-
-# Copyright (C) 2008, Sebastian Riedel.
+eval 'exec $CBROOT/bin/perl $0 ${1+"$@"}'
+  if $running_under_some_shell;
 
 use strict;
 use warnings;
