@@ -5,6 +5,7 @@ use strict;
 use warnings;
 
 use Net::CouchDB;
+use CPAN::Testers::Server::Report::Upgrade qw(upgrade_data);
 
 use Data::Dump qw(dump);
 

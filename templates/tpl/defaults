@@ -1,0 +1,9 @@
+[%-  page = {
+            title = template.title,
+            style = template.style or 'style.html'
+    };
+
+    # don't include any whitespace from here...
+    RETURN;
+-%]
+

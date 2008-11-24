@@ -1,0 +1,42 @@
+<html>
+<head>
+<title>[% page.title %]</title>
+
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.6.0/build/reset-fonts-grids/reset-fonts-grids.css">
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.6.0/build/base/base-min.css">
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.6.0/build/grids/grids-min.css">
+<link rel="stylesheet" type="text/css" href="/css/master.css">
+
+</head>
+<body>
+
+<div id="doc3"> 
+
+<div id="hd">
+    <a href="/">Home</a><br>
+    <h1>[% page.title %]</h1>
+</div>  
+
+<div id="bd">
+
+[% content %]
+
+</div>  <!-- bd --> 
+
+<div id="ft">
+    <a href="/">Home</a><br/>
+</div>
+
+</div> <!-- doc3 -->
+
+
+[% IF page.scripts %]
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js"></script>
+[% # <script type="text/javascript" src="/ext/jquery-1.2.6.min.js"></script> %]
+
+[% page.scripts %]
+
+[% END %]
+
+</body>
+</html>

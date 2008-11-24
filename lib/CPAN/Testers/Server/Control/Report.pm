@@ -1,7 +1,6 @@
 package CPAN::Testers::Server::Control::Report;
 use strict;
 use base qw(CPAN::Testers::Server::Control);
-use Combust::Constant qw(OK NOT_FOUND);
 
 use CPAN::Testers::Server::DB qw(db);
 
@@ -9,20 +8,29 @@ use JSON::XS;
 
 my $json = JSON::XS->new->utf8->pretty(1);
 
-sub render {
-    my $self = shift;
+use Data::Dump qw(dump);
+
+sub view {
+    my ($self, $c) = @_;
+
+    dump($c);
+
+    my $id = $c->match->captures->{id};
+
+    warn "ID: $id";
 
     my $db = db();
 
-    my ($report_id) = ($self->request->uri =~ m!^/report/(.*)!);
+    #my ($report_id) = ($c->req->path =~ m!^/report/(.*)!);
 
-    my $doc = $db->document($report_id);
+    my $doc = $id && $db->document($id);
 
-    return NOT_FOUND unless $doc;
+    return unless $doc;
     
     my $hash = $doc->data;
-
-    return OK, $json->encode($hash), 'text/plain';
+    
+    $c->res->code(200);
+    $c->res->body($json->encode($hash));
 }
 
 1;

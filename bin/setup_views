@@ -58,7 +58,20 @@ my %design =
              },
            },
    report => { version =>
-               { map => "function(doc) { emit(doc.report_version, null) }" 
+               { map => "function(doc) {
+                            if (doc.type == 'report') {
+                               var version = doc.report && doc.report.version;
+                               if (!version) { version = doc.report_version }
+                               emit(version, null)
+                            }
+                         }"
+               },
+               timestamp =>
+               { map => "function(doc) {
+                           if (doc.type == 'report' && doc.report && doc.report.created_ts) { 
+                             emit (doc.report.created_ts, {name: doc.distribution.name, grade: doc.grade})
+                           }
+                         }",
                }
              },
 ); 

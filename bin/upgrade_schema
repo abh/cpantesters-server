@@ -1,126 +1,62 @@
-eval 'exec $CBROOT/bin/perl $0 ${1+"$@"}'
-  if $running_under_some_shell;
+#!/opt/local/bin/perl
 use strict;
 use warnings;
 
+use lib 'lib';
 use lib '/Users/ask/src/Net-CouchDB/lib';
-use Net::CouchDB;
+use Net::CouchDB 0.02;
 use Data::Dump qw(dump);
-use Email::Simple;
 
 use CPAN::Testers::Server::DB qw(db);
+use CPAN::Testers::Server::Report::Upgrade qw(upgrade_data);
+
+print "connecting\n";
+
 my $db = db();
 
-my $start_key;
+print "Document count: ", $db->document_count, "\n";
+
+my $initial_startkey = shift;
+
+my $start_key = $initial_startkey;
 
 my $i = 0;
 while (1) {
-    my $documents = $db->all_documents({ count => 1000,
-                                         ($start_key 
+    my $documents = $db->all_documents({ count => ($initial_startkey ? 1 : 30),
+                                         ($start_key
                                           ? (startkey_docid => $start_key,
-                                             skip => 1,
+                                             skip => ($initial_startkey ? 0 : 1),
                                             ) 
                                           : ())
                                        });
     last unless @$documents;
 
     my @update;
-    
+
     for my $doc (@$documents) {
         $i++;
         next if $doc->id =~ m/^_design/;
-        next if $doc->{report_version} and $doc->{report_version} >= 0.13;
-
-        print $doc->id, " ", $doc->{distribution}->{name} && $doc->{distribution}->{name}, "\n";
-
-        my $update = 0;
-
-        if (my $version = delete $doc->{version}) {
-            $doc->{report_version} = $version;
-            $update = 1;
-        }
-
-        if ($doc->{report}) {
-            $doc->{nntp}{report} = delete $doc->{report};
-            $update = 1;
-        }
-
-        my $email = Email::Simple->new($doc->{nntp}{report});
-        
-        if (!$doc->{nntp}{msg_id} or $doc->{nntp}{id}) {
-            $doc->{nntp}{msg_id} = delete $doc->{nntp}{id} || $email->header('Message-Id');
-            $update = 1;
-        }
-
-        if ($doc->{nntp_id} or !$doc->{nntp}{num}) {
-            my $old_num       = delete $doc->{nntp_id};
-            $doc->{nntp}{num} = $doc->{nntp}{num} || $old_num;
-
-            unless ($doc->{nntp}{num}) {
-                my $xref = $email->header('Xref');
-                ($doc->{nntp}{num}) = ($xref && $xref =~ m/nntp.perl.org .*perl.cpan.testers:(\d+)/);
-            }
-            
-            $update = 1;
-        }
-        
-        if ($update) {
-            $doc->{report_version} = 0.13;
-            push @update, $doc;
-        }
-            
-        #print dump($doc);
-    }
+        #if ($doc->{report}->{version} == 0.19) {
+        #    $doc->delete; 
+        #    next;
+        #}
+        print "ID: ", $doc->id, "\n";
+        my $new_doc = upgrade_data(undef, $doc);
+        #dump($new_doc);
+        next unless $new_doc;
+        push @update, $new_doc;
+      }
 
     if (@update) {
         $db->bulk({ update => \@update });
     }
+    #use Data::Dumper;
+    #warn Data::Dumper->Dump([\$documents], [qw(docs)]);
     $start_key = $documents->[-1]->id;
 
-    last if $i >= 20000;
+    last if $initial_startkey;
+    #last if $i >= 40;
 
 }
 
-
-
-__END__
-
-my $view = $db->document('_design/nntp')->view('message_id');
-
-while (1) {
-    my $vr = $view->search({ count => 1000,
-                             key   => 'report',
-                           });
-
-    my @update;
- 
-    while (my $row = $vr->next) {
-        my $doc = $row->document;
-
-        $i++;
-        next if $doc->id =~ m/^_design/;
-
-        my $update = 0;
-
-        print "ID: ", $doc->id, "\n";
-
-        if ($doc->{nntp}{msg_id} eq 'report') {
-            my $email = Email::Simple->new($doc->{nntp}{report});
-        
-            $doc->{nntp}{msg_id} = $email->header('Message-Id');
-            $update = 1;
-        }
-
-        if ($update) {
-            $doc->{report_version} = 0.14;
-            push @update, $doc;
-        }
-            
-        #print dump($doc);
-    }
-
-    if (@update) {
-        $db->bulk({ update => \@update });
-    }
-}   
 
