@@ -1,4 +1,5 @@
-#!/opt/local/bin/perl
+eval 'exec $CBROOT/bin/perl $0 ${1+"$@"}'
+  if $running_under_some_shell;
 use strict;
 use warnings;
 
