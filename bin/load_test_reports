@@ -72,7 +72,7 @@ while (1) {
     $compact_counter += $limit;
     $index_counter   += $limit;
 
-    print "processing ", scalar @$reports, " reports\n";
+    print scalar localtime, " processing ", scalar @$reports, " reports\n";
     my @docs;
 
     for (@$reports) {
@@ -138,7 +138,7 @@ while (1) {
     die "only have ", scalar @docs, " docs from ", scalar @$reports, " reports"
       unless @docs == @$reports;
 
-    print "inserting ", scalar @docs, " docs\n";
+    print scalar localtime, " inserting ", scalar @docs, " docs\n";
 
   INSERT:
     eval {
@@ -151,7 +151,7 @@ while (1) {
     }
 
     $last_id = $reports->[-1]->{id};
-    print "last id: $last_id\n";
+    print scalar localtime, " done inserting - last id: $last_id\n";
 
     #warn "new last id: $last_id";
 
