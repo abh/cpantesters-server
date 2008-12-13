@@ -10,9 +10,9 @@ use Data::Dump qw(dump);
 use MIME::Base64 qw(encode_base64);
 
 sub upgrade_data {
-    my ($self, $doc) = @_;
+    my ($self, $doc, $force) = @_;
 
-    return if $doc->{report}->{version} and $doc->{report}->{version} >= 0.21;
+    return if !$force and $doc->{report}->{version} and $doc->{report}->{version} >= 0.21;
     
     print $doc->id, " ", $doc->{distribution}->{name} && $doc->{distribution}->{name}, "\n";
     

@@ -3,8 +3,6 @@ eval 'exec $CBROOT/bin/perl $0 ${1+"$@"}'
 use strict;
 use warnings;
 
-use lib 'lib';
-use lib '/Users/ask/src/Net-CouchDB/lib';
 use Net::CouchDB 0.02;
 use Data::Dump qw(dump);
 
@@ -42,7 +40,7 @@ while (1) {
         #    next;
         #}
         print "ID: ", $doc->id, "\n";
-        my $new_doc = upgrade_data(undef, $doc);
+        my $new_doc = upgrade_data(undef, $doc, 1);
         #dump($new_doc);
         next unless $new_doc;
         push @update, $new_doc;
