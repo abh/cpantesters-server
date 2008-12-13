@@ -43,7 +43,7 @@ sub startup {
                             },
       );
     my $renderer = $self->renderer;
-    $renderer->default_ext('html');
+    $renderer->default_format('html');
     $renderer->add_handler( html => $tt );
 
     my $r = $self->routes;
