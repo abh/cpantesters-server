@@ -21,7 +21,7 @@ my $start_key = $initial_startkey;
 
 my $i = 0;
 while (1) {
-    my $documents = $db->all_documents({ count => ($initial_startkey ? 1 : 30),
+    my $documents = $db->all_documents({ count => 30,
                                          ($start_key
                                           ? (startkey_docid => $start_key,
                                              skip => ($initial_startkey ? 0 : 1),
@@ -29,6 +29,8 @@ while (1) {
                                           : ())
                                        });
     last unless @$documents;
+
+    $initial_startkey = undef; 
 
     my @update;
 
@@ -53,9 +55,10 @@ while (1) {
     #warn Data::Dumper->Dump([\$documents], [qw(docs)]);
     $start_key = $documents->[-1]->id;
 
-    last if $initial_startkey;
+    #last if $initial_startkey;
     #last if $i >= 40;
 
 }
+
 
 
